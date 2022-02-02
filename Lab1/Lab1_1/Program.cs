@@ -11,24 +11,17 @@ InpFilename:
     goto InpFilename;
 
 FileIsSelected:
-    string text = new StreamReader(path, Encoding.Default).ReadToEnd();
+    string text = " "+new StreamReader(path, Encoding.Default).ReadToEnd();
 
-List<string> useless1 = new() { "The ", "For ", "On ", "In ", "At ", "To " };
-List<string> useless2 = new() { ", ", ". ", " - ", ": ", "\r\n", " the ", " for ", " on ", " in ", " at ", " to " };
+List<string> symbolsToIgnore = new() { "\r\n", "[", "]", ",", ".", " - ", ":", ";", "?", "!", "--", " the ", " a ", " an ", " for ",
+    " on ", " in ", " at ", " to ", " and ", " or ",  " as " };
+text = text.ToLower();
 int ctr = 0;
 
-RemoveUseless1:
-    text = text.Replace(useless1[ctr], "");
+RemoveUseless:
+    text = text.Replace(symbolsToIgnore[ctr], " ");
     ctr++;
-    if (ctr<useless1.Count) goto RemoveUseless1;
-
-text = text.ToLower();
-ctr = 0;
-
-RemoveUseless2:
-    text = text.Replace(useless2[ctr], " ");
-    ctr++;
-    if (ctr<useless2.Count) goto RemoveUseless2;
+    if (ctr<symbolsToIgnore.Count) goto RemoveUseless;
 
 var words = text.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 Dictionary<string, int> dictionary = new();

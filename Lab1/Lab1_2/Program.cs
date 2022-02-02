@@ -14,7 +14,7 @@ FileIsSelected:
 int lineCtr = 0;
 StreamReader sr = new StreamReader(path, Encoding.Default);
 Dictionary<string, List<int>> dictionary = new();
-List<string> useless = new() { "[", "]", ",", ".", " - ", ":", ";", "?", "!", "--", " the ", " a ", " an ", " for ",
+List<string> symbolsToIgnore = new() { "[", "]", ",", ".", " - ", ":", ";", "?", "!", "--", " the ", " a ", " an ", " for ",
     " on ", " in ", " at ", " to ", " and ", " or ",  " as " };
 
 NextLine:
@@ -26,16 +26,17 @@ NextLine:
     int ctr = 0;
 
     RemoveUseless:
-        line = line.Replace(useless[ctr], " ");
+        line = line.Replace(symbolsToIgnore[ctr], " ");
         ctr++;
-        if (ctr<useless.Count) goto RemoveUseless;
+        if (ctr<symbolsToIgnore.Count) goto RemoveUseless;
 
     var words = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
     ctr = 0;
 
     ForEachWord:
         if (!dictionary.ContainsKey(words[ctr])) dictionary.Add(words[ctr], new List<int>(){(int)Math.Ceiling(lineCtr/45.0)});
-        else if (!dictionary[words[ctr]].Contains((int)Math.Ceiling(lineCtr/45.0))) dictionary[words[ctr]].Add((int)Math.Ceiling(lineCtr/45.0));
+        else if (!dictionary[words[ctr]].Contains((int)Math.Ceiling(lineCtr/45.0)) && 
+                 dictionary.Count<100) dictionary[words[ctr]].Add((int)Math.Ceiling(lineCtr/45.0));
         ctr++;
         if (ctr<words.Length) goto ForEachWord;
 
