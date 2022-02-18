@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -6,45 +6,58 @@ using System.Text;
 InpFilename:
     Console.Write("Введiть назву файлу: ");
     string path = Console.ReadLine();
-    if (!string.IsNullOrEmpty(path) && File.Exists(path) && path.Length>4 && path.Substring(path.Length-4)==".txt") goto FileIsSelected;
-    Console.WriteLine("Некоректний ввiд!");
+    if (path != null && path != "" && File.Exists(path) && path.Length>4
+        && path[^1]=='t' && path[^3]=='t' && path[^2]=='x' && path[^4]=='.') goto FileIsSelected;
+    Console.Write("Некоректний ввiд!\n");
     goto InpFilename;
 
 FileIsSelected:
-    string text = " "+new StreamReader(path, Encoding.Default).ReadToEnd();
+    string[] wordsToIgnore = {"--", "the", "a", "an", "for", "on", "in", "at", "to", "and", "or", "as" };
+    StreamReader sr = new StreamReader(path, Encoding.Default);
+    Dictionary<string, int> dictionary = new();
+    int ch;
+    string word;
 
-List<string> symbolsToIgnore = new() { "\r\n", "[", "]", ",", ".", " - ", ":", ";", "?", "!", "--", " the ", " a ", " an ", " for ",
-    " on ", " in ", " at ", " to ", " and ", " or ",  " as " };
-text = text.ToLower();
-int ctr = 0;
+NextWord:
+    word = "";
+    NextChar:
+    ch = sr.Read();
+    if (ch == -1 || ch == 13 || ch == 9 || ch == 10 || ch == 32 || ch == 160) goto EndWord;
+    if (ch is > 32 and < 65 or > 90 and < 96 or > 122 and < 128 || ch == 150 || ch == 151) goto NextChar;
+    word += (char) (ch is > 64 and < 91 or > 191 and < 224 ? ch+32 : ch);
+    goto NextChar;
+EndWord:
+    if (word != "" && !Array.Exists(wordsToIgnore, element => element == word))
+    {
+        if (dictionary.ContainsKey(word)) dictionary[word] += 1;
+        else dictionary.Add(word, 1);
+    }
+    if (ch!=-1) goto NextWord;
 
-RemoveUseless:
-    text = text.Replace(symbolsToIgnore[ctr], " ");
-    ctr++;
-    if (ctr<symbolsToIgnore.Count) goto RemoveUseless;
+    List<KeyValuePair<string, int>> wordCounts = new(dictionary);
+    wordCounts.Sort((p1, p2)=>p2.Value.CompareTo(p1.Value));
 
-var words = text.Split(" ", StringSplitOptions.RemoveEmptyEntries);
-Dictionary<string, int> dictionary = new();
-ctr = 0;
-
-ForEachWord:
-    if (dictionary.ContainsKey(words[ctr])) dictionary[words[ctr]] += 1;
-    else dictionary.Add(words[ctr], 1);
-    ctr++;
-    if (ctr<words.Length) goto ForEachWord;
-
-List<KeyValuePair<string, int>> wordCounts = new(dictionary);
-wordCounts.Sort((p1, p2)=>p2.Value.CompareTo(p1.Value));
-ctr = 0;
 InpRequiredWordsNumber:
     Console.Write("Введiть бажану кiлькiсть слiв: ");
-    if (!Int32.TryParse(Console.ReadLine(), out var requiredWordsNumber) || requiredWordsNumber < 1)
-    {
-        Console.WriteLine("Будь ласка, введiть натуральне число!");
-        goto InpRequiredWordsNumber;
-    }
+    string requiredWordsNumberS = Console.ReadLine();
+    int ctr = 0, requiredWordsNumber = 0;
+    if (requiredWordsNumberS == null || requiredWordsNumberS == "") goto InpError;
+
+NextDigit:
+    requiredWordsNumber *= 10;
+    if (requiredWordsNumberS[ctr] is <'0' or > '9') goto InpError;
+    requiredWordsNumber += requiredWordsNumberS[ctr] - '0';
+    ctr++;
+    if (ctr<requiredWordsNumberS.Length) goto NextDigit;
+    if (requiredWordsNumber < 1) goto InpError;
+    ctr = 0;
+    goto OutputWords;
+
+InpError:
+    Console.WriteLine("Будь ласка, введiть натуральне число!");
+    goto InpRequiredWordsNumber;
 
 OutputWords:
-    Console.WriteLine(wordCounts[ctr].Key+" - "+wordCounts[ctr].Value);
+    Console.Write(wordCounts[ctr].Key+" - "+wordCounts[ctr].Value+"\n");
     ctr++;
     if (ctr<wordCounts.Count && ctr<requiredWordsNumber) goto OutputWords;
